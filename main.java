@@ -39,10 +39,7 @@ class Lab1 {
         }
         for (int i = 0; i < n; i++) {
             ring[i].neighbours = getNeighbours(ring[i], ring);
-            for (int n = 0; n < nids.length; n++) {
-                nids[n] = ring[i].neighbours[n].id;
-            }
-            System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\n",ring[i].id, ring[i].prev.id,ring[i].next.id, Arrays.toString(nids)));
+            
         }
         return ring;
     }
@@ -57,5 +54,11 @@ class Lab1 {
             }
             System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\n",ring[i].id, ring[i].prev.id,ring[i].next.id, Arrays.toString(nids)));
         } */
+        for (int i = 0; i < n; i++) {
+            for (int n = 0; n < nids.length; n++) {
+                nids[n] = ring[i].neighbours[n].id;
+            }
+            System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\n",ring[i].id, ring[i].prev.id,ring[i].next.id, Arrays.toString(nids)));
+        }
     }
 } 
