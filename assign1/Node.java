@@ -1,6 +1,7 @@
 class Node {
-    String state;
+    String state = "asleep";
     int id;
+    int position;
     Node next;
     Node prev;
     Node[] neighbours = new Node[9];

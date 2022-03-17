@@ -1,17 +1,16 @@
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
+import java.util.Random;
 
 class Lab1 {
-    static int n = 10;
-    static Node[] ring = new Node[n];
-    static int[] nids = new int[n-1];
-    static int round = 1;
     static boolean leadElected = false;
     static int leadid = 0;
-    public static Node[] getNeighbours(Node node, Node[] ring) {
-        Node[] neighbours = new Node[n-1];
-        neighbours = new Node[n-1];
+    public static Node[] getNeighbours(Node node, Node[] ring, int size) {
+        Node[] neighbours = new Node[size-1];
+        neighbours = new Node[size-1];
         int count = 0;
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < size; i++) {
             if (ring[i] != node) {
                 neighbours[count] = ring[i];
                 count++;
@@ -19,58 +18,83 @@ class Lab1 {
         }
         return neighbours;
     }
-
-    public static Node[] initRing() {
+    public static int[] getRandomIDs(int size) {
+        int chosen[] = new int[size];
+        ArrayList<Integer> chosenList = new ArrayList<Integer>(size);
+        for (int i = 0; i < size; i++) {
+            Random rnd = new Random();
+            int id = rnd.nextInt(size);  
+            while (chosenList.contains(id)) {
+                id = rnd.nextInt(size);
+            }
+            chosenList.add(id);
+        }
+        chosen = chosenList.stream().mapToInt(i -> i).toArray();
+        System.out.println(Arrays.toString(chosen));
+        return chosen;
+    }
+        
+    
+    public static Node[] initRing(int size) {
         // create ring and assign id to every node in ring
-        for (int id = 1; id <= n;id++) {
+        Node[] ring = new Node[size];
+        int[] randIDs = getRandomIDs(size);
+        for (int i = 0; i < size;i++) {
             Node currNode = new Node();
-            ring[id-1] = currNode;
-            currNode.state="active";
-            currNode.id =id;
-            currNode.start = id;
+            ring[i] = currNode;
+            currNode.position = i;
+            currNode.state="asleep";
+            currNode.id = randIDs[i]; // change this to be random
+            currNode.start = i;
             currNode.inid = 0;
             currNode.sendid = currNode.id;
             currNode.status = "unknown";
         } 
         // link nodes to prev and next
-        for (int id = 1; id <= n; id++) {
-            if (id == 1) {
-                ring[id-1].prev = ring[n-1];
-                ring[id-1].next = ring[id];
-            } else if (id == n) {
-                ring[id-1].next = ring[0];
-                ring[id-1].prev = ring[id-2];
+        for (int i = 0; i < size; i++) {
+            if (i == 0) {
+                ring[i].prev = ring[size-1];
+                ring[i].next = ring[i+1];
+            } else if (i == size-1) {
+                ring[i].next = ring[0];
+                ring[i].prev = ring[i-1];
             } else {
-                ring[id-1].prev = ring[id-2];
-                ring[id-1].next = ring[id];
+                ring[i].prev = ring[i-1];
+                ring[i].next = ring[i+1];
             }
-            ring[id-1].neighbours = getNeighbours(ring[id-1], ring);
-        }
-        for (int i = 0; i < n; i++) {
-           // ring[i].neighbours = getNeighbours(ring[i], ring);
+            ring[i].neighbours = getNeighbours(ring[i], ring, size);
         }
         return ring;
     }
-    public static Node[] LCR(Node[] ring) {
+    public static Node[] mainLCR(Node[] ring) {
+        int n = ring.length;
+        int round = 1;
         while (!leadElected) {
             for (int i=0; i<n; i++) {
                 if (ring[i].id==n) {
                         round++;
                     }
                     if (round==ring[i].start) {
-                        ring[i].next.inid = ring[i].sendid;
-                        
+                        ring[i].state = "awake";
+                        if (ring[i].next.state == "awake") {
+                            ring[i].next.inid = ring[i].sendid;
+                        } else { continue; }
                     } else {
                         if (ring[i].inid > ring[i].id) {
                             ring[i].sendid = ring[i].inid;
-                            ring[i].next.inid = ring[i].sendid;
+                            if (ring[i].next.state=="awake") {
+                                ring[i].next.inid = ring[i].sendid;
+                            }
                         } else if (ring[i].inid == ring[i].id) {
                             ring[i].status = "leader";
                             leadid = ring[i].id;
                             leadElected = true;
                         } else {
                             ring[i].sendid = ring[i].id;
-                            ring[i].next.inid = ring[i].sendid;
+                            if (ring[i].next.state == "asleep") {
+                                ring[i].next.inid = ring[i].sendid;
+                            }
+                            
                         }
                     }
             }
@@ -81,16 +105,94 @@ class Lab1 {
         }
         return ring;
     }
+
+    public static NodeList createSubringList(int[] interfacenodes, String[] interfacenodesString, int[] subringsizes, String[] subringsizeinput, NodeList allnode) {
+        for (int i = 0; i < interfacenodes.length; i++) {
+            interfacenodes[i] = Integer.parseInt(interfacenodesString[i]);
+            subringsizes[i] = Integer.parseInt(subringsizeinput[i]);
+            allnode.interfaceNodes.put(interfacenodes[i], new Node[subringsizes[i]]);           
+        } 
+        return allnode;
+    }
+    
     public static void main(String[] args) {
-        ring = initRing();
-        ring = LCR(ring);
-        // tests nodes are linked correctly, and finding neighbours works
-        for (int i = 0; i < n; i++) {
-            for (int n = 0; n < nids.length; n++) {
-                nids[n] = ring[i].neighbours[n].id;
+        Scanner userinput = new Scanner(System.in);
+
+        System.out.println("How many nodes are in the main ring? ");
+        int mainnum_nodes = userinput.nextInt();
+        NodeList allnodes = new NodeList();
+        allnodes.normalNodes = initRing(mainnum_nodes);
+      //  mainring = mainLCR(mainring);
+
+        // Get interface node positions
+        System.out.println("Which nodes are interface nodes? (~ if none, or # between each number) ");
+        String interfaceinput = userinput.next();
+        int[] interfacenodes;
+        String[] interfacenodesString;
+        if (!interfaceinput.equals("~")) {
+            interfacenodesString = interfaceinput.split("#");
+            interfacenodes = new int[interfacenodesString.length];   
+            System.out.println("How many nodes are in each interface node's subring? (Leave blank if none and # between each number) ");
+            String[] subringsizeinput = userinput.next().split("#");
+            int[] subringsizes = new int[subringsizeinput.length];
+            if (interfacenodes.length != 0) {
+                allnodes = createSubringList(interfacenodes, interfacenodesString, subringsizes, subringsizeinput, allnodes);
+            } 
+            for (int i = 0; i < allnodes.interfaceNodes.size(); i++) {
+                for (int j = 0; j < subringsizes.length; j++) {
+                    allnodes.interfaceNodes.put(interfacenodes[j], initRing(subringsizes[j]));
+                }
             }
-            System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
-                                            ring[i].id, ring[i].prev.id,ring[i].next.id, Arrays.toString(nids), ring[i].leadid, ring[i].status,ring[i].state));
+        } else {
+            interfacenodes = new int[0];
+            interfacenodesString = new String[0];
         }
+        
+        
+        
+        // Used for testing interface nodes map
+        /* System.out.println("Interface nodes: " + Arrays.toString(interfacenodes));
+        for (int i = 0; i < allnode.interfaceNodes.size(); i++) {
+            System.out.print("Size of each subring: ");
+            System.out.println(allnode.interfaceNodes.get(interfacenodes[i]).length);
+        } */
+
+        
+
+
+
+        userinput.close();
+        /* int[] mainnids = new int[mainring.length-1];
+        // tests nodes are linked correctly, and finding neighbours works
+        for (int i = 0; i < mainring.length; i++) {
+            for (int n = 0; n < mainnids.length; n++) {
+                mainnids[n] = mainring[i].neighbours[n].id;
+            }
+            //System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
+                //                            mainring[i].id, mainring[i].prev.id, mainring[i].next.id, Arrays.toString(mainnids), mainring[i].leadid, mainring[i].status, mainring[i].state));
+        } */
+        System.out.println("STARTING RING 1\n");
+        /* Node[] onering = initRing(7);
+        onering = mainLCR(onering);
+        int[] onenids = new int[onering.length-1];
+        // tests nodes are linked correctly, and finding neighbours works
+        for (int i = 0; i < onering.length; i++) {
+            for (int n = 0; n < onenids.length; n++) {
+                onenids[n] = onering[i].neighbours[n].id;
+            }
+         //   System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
+           //                                 onering[i].id, onering[i].prev.id, onering[i].next.id, Arrays.toString(onenids), onering[i].leadid, onering[i].status, onering[i].state));
+        }
+        Node[] threering = initRing(5);
+        threering = mainLCR(threering);
+        int[] threenids = new int[threering.length-1];
+        // tests nodes are linked correctly, and finding neighbours works
+        for (int i = 0; i < threering.length; i++) {
+            for (int n = 0; n < threenids.length; n++) {
+                threenids[n] = threering[i].neighbours[n].id;
+            }
+          //  System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
+                //                            threering[i].id, threering[i].prev.id, threering[i].next.id, Arrays.toString(threenids), threering[i].leadid, threering[i].status, threering[i].state));
+        }*/
     }
 } 
