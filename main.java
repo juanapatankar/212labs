@@ -46,14 +46,14 @@ class Lab1 {
     public static void main(String[] args) {
         ring = initRing();
         //tests nodes are linked correctly, and finding neighbours works
-        /* for (int i = 0; i < n; i++) {
-            neighbours = getNeighbours(ring[i], ring);
+         for (int i = 0; i < n; i++) {
+            Node[] neighbours = getNeighbours(ring[i], ring);
             int[] nids = new int[neighbours.length];
             for (int n = 0; n < nids.length; n++) {
                 nids[n] = neighbours[n].id;
             }
             System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\n",ring[i].id, ring[i].prev.id,ring[i].next.id, Arrays.toString(nids)));
-        } */
+        } 
         for (int i = 0; i < n; i++) {
             for (int n = 0; n < nids.length; n++) {
                 nids[n] = ring[i].neighbours[n].id;

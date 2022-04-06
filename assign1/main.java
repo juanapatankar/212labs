@@ -1,9 +1,10 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
+
+
 import java.util.Random;
 
-class Lab1 {
+class Assign1 {
     static boolean leadElected = false;
     static int leadid = 0;
     public static Node[] getNeighbours(Node node, Node[] ring, int size) {
@@ -23,14 +24,13 @@ class Lab1 {
         ArrayList<Integer> chosenList = new ArrayList<Integer>(size);
         for (int i = 0; i < size; i++) {
             Random rnd = new Random();
-            int id = rnd.nextInt(size);  
+            int id = rnd.nextInt(size*20);  
             while (chosenList.contains(id)) {
                 id = rnd.nextInt(size);
             }
             chosenList.add(id);
         }
         chosen = chosenList.stream().mapToInt(i -> i).toArray();
-        System.out.println(Arrays.toString(chosen));
         return chosen;
     }
         
@@ -46,7 +46,7 @@ class Lab1 {
             currNode.state="asleep";
             currNode.id = randIDs[i]; // change this to be random
             currNode.start = i;
-            currNode.inid = 0;
+            currNode.inid = -1;
             currNode.sendid = currNode.id;
             currNode.status = "unknown";
         } 
@@ -68,10 +68,10 @@ class Lab1 {
     }
     public static Node[] mainLCR(Node[] ring) {
         int n = ring.length;
-        int round = 1;
+        int round = 0;
         while (!leadElected) {
             for (int i=0; i<n; i++) {
-                if (ring[i].id==n) {
+                if (ring[i].position+1==n) {
                         round++;
                     }
                     if (round==ring[i].start) {
@@ -91,10 +91,9 @@ class Lab1 {
                             leadElected = true;
                         } else {
                             ring[i].sendid = ring[i].id;
-                            if (ring[i].next.state == "asleep") {
+                            if (ring[i].next.state == "awake") {
                                 ring[i].next.inid = ring[i].sendid;
-                            }
-                            
+                            }                            
                         }
                     }
             }
@@ -134,24 +133,31 @@ class Lab1 {
             interfacenodes = new int[interfacenodesString.length];   
             System.out.println("How many nodes are in each interface node's subring? (Leave blank if none and # between each number) ");
             String[] subringsizeinput = userinput.next().split("#");
+            userinput.close();
             int[] subringsizes = new int[subringsizeinput.length];
             if (interfacenodes.length != 0) {
                 allnodes = createSubringList(interfacenodes, interfacenodesString, subringsizes, subringsizeinput, allnodes);
             } 
             for (int i = 0; i < allnodes.interfaceNodes.size(); i++) {
-                for (int j = 0; j < subringsizes.length; j++) {
-                    allnodes.interfaceNodes.put(interfacenodes[j], initRing(subringsizes[j]));
-                }
+                Node[] thisSubring = initRing(subringsizes[i]);
+                allnodes.interfaceNodes.put(interfacenodes[i], thisSubring);
+                thisSubring= mainLCR(thisSubring);
+                allnodes.normalNodes[interfacenodes[i]].id = thisSubring[0].leadid;
+                allnodes.normalNodes = mainLCR(allnodes.normalNodes);
             }
         } else {
             interfacenodes = new int[0];
             interfacenodesString = new String[0];
         }
         
+        allnodes.normalNodes = mainLCR(allnodes.normalNodes);
+        // System.out.println(allnodes.normalNodes[0].leadid);
         
+
         
+        /* IGNORE THESE
         // Used for testing interface nodes map
-        /* System.out.println("Interface nodes: " + Arrays.toString(interfacenodes));
+        /* System.out.println("Interface nodes: " + Arrays.toString(allnodes.interfacenodes));
         for (int i = 0; i < allnode.interfaceNodes.size(); i++) {
             System.out.print("Size of each subring: ");
             System.out.println(allnode.interfaceNodes.get(interfacenodes[i]).length);
@@ -161,7 +167,7 @@ class Lab1 {
 
 
 
-        userinput.close();
+        
         /* int[] mainnids = new int[mainring.length-1];
         // tests nodes are linked correctly, and finding neighbours works
         for (int i = 0; i < mainring.length; i++) {
@@ -171,7 +177,6 @@ class Lab1 {
             //System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
                 //                            mainring[i].id, mainring[i].prev.id, mainring[i].next.id, Arrays.toString(mainnids), mainring[i].leadid, mainring[i].status, mainring[i].state));
         } */
-        System.out.println("STARTING RING 1\n");
         /* Node[] onering = initRing(7);
         onering = mainLCR(onering);
         int[] onenids = new int[onering.length-1];
@@ -194,5 +199,6 @@ class Lab1 {
           //  System.out.println(String.format("Node: %s\nPrevious node: %s\nNext node: %s\nNeighbour IDs: %s\nElected leader: %s\nStatus: %s\nState: %s\n",
                 //                            threering[i].id, threering[i].prev.id, threering[i].next.id, Arrays.toString(threenids), threering[i].leadid, threering[i].status, threering[i].state));
         }*/
+        
     }
 } 
